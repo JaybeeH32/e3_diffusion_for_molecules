@@ -10,7 +10,7 @@ import torch
 from configs.datasets_config import get_dataset_info
 import pickle
 import os
-import time
+from time import time
 
 def mol2xyz(mol):
     mol = Chem.AddHs(mol)
@@ -119,10 +119,10 @@ class BasicMolecularMetrics(object):
                 # psi4
                 xyz, _ = mol2xyz(mol)
                 geometry = psi4.geometry(xyz)
-                time = time.time()
+                tim = time()
                 print(f'Starting molecule {i}:', smiles)
                 scf_e, scf_wfn = psi4.energy("B3LYP/cc-pVDZ", return_wfn=True)
-                print(f'Computing energy took: {time.time() - time}')
+                print(f'Computing energy took: {time() - tim}')
                 homo = scf_wfn.epsilon_a_subset('AO', 'ALL').np[scf_wfn.nalpha()-1]
                 lumo = scf_wfn.epsilon_a_subset('AO', 'ALL').np[scf_wfn.nalpha()]
                 energy_levels[smiles] = {'lumo': lumo, 'homo': homo, 'energy': scf_e}
