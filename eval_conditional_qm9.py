@@ -193,7 +193,8 @@ def main_qualitative(args):
     model, nodes_dist, prop_dist, dataset_info = get_generator(args.generators_path,
                                                                dataloaders, args.device, args_gen,
                                                                property_norms)
-
+    for param in model.dynamics.egnn.e_block_0.gcl_0.edge_mlp[0].parameters():
+        print(param)
     for i in range(args.n_sweeps):
         print("Sampling sweep %d/%d" % (i+1, args.n_sweeps))
         save_and_sample_conditional(args_gen, device, model, prop_dist, dataset_info, epoch=i, id_from=0)
@@ -224,6 +225,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if args.cuda else "cpu")
+    print(f'Cuda is {args.cuda}, device is {device}')
     args.device = device
 
     if args.task == 'qualitative':

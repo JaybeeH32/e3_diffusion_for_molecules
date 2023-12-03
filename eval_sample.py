@@ -108,8 +108,10 @@ def main():
     eval_args, unparsed_args = parser.parse_known_args()
 
     assert eval_args.model_path is not None
-
-    with open(join(eval_args.model_path, 'args.pickle'), 'rb') as f:
+    print('test', join(eval_args.model_path, 'args.pickle'))
+    path = eval_args.model_path + '/args.pickle'
+    #with open(join(eval_args.model_path, 'args.pickle'), 'rb') as f:
+    with open(path, 'rb') as f:
         args = pickle.load(f)
 
     # CAREFUL with this -->

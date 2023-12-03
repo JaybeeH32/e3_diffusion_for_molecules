@@ -1,4 +1,8 @@
 from rdkit import Chem
+from rdkit.Chem import Draw
+from rdkit.Chem import AllChem
+import multiprocessing
+import psi4
 import numpy as np
 from qm9.bond_analyze import get_bond_order, geom_predictor
 from . import dataset
@@ -6,6 +10,19 @@ import torch
 from configs.datasets_config import get_dataset_info
 import pickle
 import os
+import time
+
+def mol2xyz(mol):
+    mol = Chem.AddHs(mol)
+    AllChem.EmbedMolecule(mol, useExpTorsionAnglePrefs=True,useBasicKnowledge=True)
+    AllChem.UFFOptimizeMolecule(mol)
+    atoms = mol.GetAtoms()
+    string = string = "\n"
+    for i, atom in enumerate(atoms):
+        pos = mol.GetConformer().GetAtomPosition(atom.GetIdx())
+        string += "{} {} {} {}\n".format(atom.GetSymbol(), pos.x, pos.y, pos.z)
+    string += "units angstrom\n"
+    return string, mol
 
 
 def compute_qm9_smiles(dataset_name, remove_h):
@@ -87,15 +104,36 @@ class BasicMolecularMetrics(object):
     def compute_validity(self, generated):
         """ generated: list of couples (positions, atom_types)"""
         valid = []
+        energy_levels = {}
+        psi4.core.set_output_file('output1.dat', True)
+        psi4.set_memory('4 GB')
+        psi4.set_num_threads(multiprocessing.cpu_count())
 
-        for graph in generated:
+        for i, graph in enumerate(generated):
             mol = build_molecule(*graph, self.dataset_info)
             smiles = mol2smiles(mol)
             if smiles is not None:
+                # Save images
+                img = Draw.MolToImage(Chem.MolFromSmiles(smiles))
+                img.save(os.path.join('valid_molecules', f'considered_stable_molecule{i}.png'))
+                # psi4
+                xyz, _ = mol2xyz(mol)
+                geometry = psi4.geometry(xyz)
+                time = time.time()
+                print(f'Starting molecule {i}:', smiles)
+                scf_e, scf_wfn = psi4.energy("B3LYP/cc-pVDZ", return_wfn=True)
+                print(f'Computing energy took: {time.time() - time}')
+                homo = scf_wfn.epsilon_a_subset('AO', 'ALL').np[scf_wfn.nalpha()-1]
+                lumo = scf_wfn.epsilon_a_subset('AO', 'ALL').np[scf_wfn.nalpha()]
+                energy_levels[smiles] = {'lumo': lumo, 'homo': homo, 'energy': scf_e}
+
+                # Normal function
                 mol_frags = Chem.rdmolops.GetMolFrags(mol, asMols=True)
                 largest_mol = max(mol_frags, default=mol, key=lambda m: m.GetNumAtoms())
                 smiles = mol2smiles(largest_mol)
                 valid.append(smiles)
+        
+        torch.save(energy_levels, 'energy_of_generated_molecules.pt')
 
         return valid, len(valid) / len(generated)
 

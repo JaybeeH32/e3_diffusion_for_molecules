@@ -1,8 +1,13 @@
 # Rdkit import should be first, do not move it
-try:
-    from rdkit import Chem
-except ModuleNotFoundError:
-    pass
+# try:
+#     from rdkit import Chem
+#     use_rdkit = True
+# except ModuleNotFoundError:
+#     use_rdkit = False
+#     pass
+from rdkit import Chem
+use_rdkit = True
+print(use_rdkit)
 import utils
 import argparse
 from qm9 import dataset
@@ -111,7 +116,7 @@ def test(args, flow_dp, nodes_dist, device, dtype, loader, partition='Test', num
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default="outputs/edm_1",
+    parser.add_argument('--model_path', type=str, default="outputs/edm_qm9",
                         help='Specify model path')
     parser.add_argument('--n_samples', type=int, default=100,
                         help='Specify model path')

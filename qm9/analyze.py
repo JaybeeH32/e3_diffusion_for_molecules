@@ -4,6 +4,7 @@ try:
     use_rdkit = True
 except ModuleNotFoundError:
     use_rdkit = False
+print(use_rdkit)
 import qm9.dataset as dataset
 import torch
 import matplotlib
@@ -282,6 +283,7 @@ def main_check_stability(remove_h: bool, batch_size=32):
     if use_rdkit:
         from qm9.rdkit_functions import BasicMolecularMetrics
         metrics = BasicMolecularMetrics(dataset_info)
+        print('Using rdkit')
 
     atom_decoder = dataset_info['atom_decoder']
 
